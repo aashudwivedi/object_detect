@@ -1,1 +1,1 @@
-import integral_image
+import features

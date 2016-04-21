@@ -20,6 +20,6 @@ class Test(unittest.TestCase):
             [3, 6, 9],
         ])
 
-        returned = vj.integral_image.get_integral_image(ones)
+        returned = vj.features.get_integral_image(ones)
 
         assert (returned == expected).all(), returned
