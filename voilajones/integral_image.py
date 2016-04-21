@@ -16,6 +16,6 @@ def get_integral_image(image):
                 result[i][j] += result[i-1][j]
             if j - 1 >= 0:
                 result[i][j] += result[i][j-1]
-            if i - 1 >=0 and j - 1 >=0:
+            if i - 1 >= 0 and j - 1 >= 0:
                 result[i][j] -= result[i-1][j-1]
     return result
