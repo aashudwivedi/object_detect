@@ -4,7 +4,7 @@ import numpy as np
 def get_integral_image(image):
     """
     calculates the summed area table for the image
-    in a single pass over the image
+    in a single pass
     :param image: image
     :return: summed area table (integral image)
     """
