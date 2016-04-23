@@ -25,7 +25,7 @@ class Test(unittest.TestCase):
         assert (returned == expected).all(), returned
 
     def test_area_sum(self):
-        ones = np.ones((3, 3))
+        ones = np.ones((4, 4))
         integral_image = vj.features.get_integral_image(ones)
 
         top_left = (0, 0)
@@ -40,6 +40,13 @@ class Test(unittest.TestCase):
         returned = vj.features.get_area_sum(integral_image, top_left,
                                     height, width)
         assert returned == 4.0
+
+        height = 0
+        width = 0
+        returned = vj.features.get_area_sum(integral_image, top_left,
+                                    height, width)
+
+        assert returned == 0
 
 
 
