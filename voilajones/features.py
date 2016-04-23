@@ -3,7 +3,7 @@ from collections import namedtuple
 
 
 class Feature(object):
-    def __init__(self, integral_image, top_left, bottom_right):
+    def __init__(self, integral_image, position, width, height):
         """
         :param integral_image: summed area table of the image
         :param top_left: coordinates of the top left point
@@ -20,14 +20,25 @@ class Feature(object):
 
 
 class FEATURE_TYPES:
-    TWO_VERTICAL = ''
+    TWO_VERTICAL = TwoRectangleVertical
 
 
 class TwoRectangleVertical(Feature):
     type = FEATURE_TYPES.TWO_VERTICAL
 
     def get_score(self):
-        return self.top_left - self.bottom_right
+        rect_height = self.height / 2
+        rec_width = self.width
+
+        top_left = self.position
+        top = get_area_sum(self.integral_image, top_left,
+                           rect_height, rec_width)
+
+        top_left = (self.position[0] + rect_height, self.position[1])
+        bottom = get_area_sum(self.integral_image, top_left,
+                                rect_height, rec_width)
+
+        return bottom - top
 
 
 def get_integral_image(image):
