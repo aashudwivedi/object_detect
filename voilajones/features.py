@@ -1,83 +1,87 @@
-import numpy as np
-from collections import namedtuple
-
-
 class Feature(object):
-    def __init__(self, integral_image, position, width, height):
-        """
-        :param integral_image: summed area table of the image
-        :param top_left: coordinates of the top left point
-        :param bottom_right: coordinates of the bottom right point
-        """
-        self.integral_image = integral_image
+    def __init__(self, position, width, height, threshold, polarity):
+        self.position = position
+        self.tl = position
+        self.br = (position[0] + width, position[1] + height)
+        self.w = width
+        self.h = height
+        self.threshold = threshold
+        self.polarity = polarity
 
-    def get_score(self):
-        raise NotImplementedError('Not implemented use a subclass')
+    def get_vote(self, intImage):
+        score = self.get_score(intImage)
+        return 1 if score < self.polarity * self.threshold else -1
 
-    @property
-    def type(self):
-        raise NotImplemented('Not implemented use a subclass')
+
+class FeatureTwoVertical(Feature):
+    dimen = (1, 2)
+
+    def get_score(self, intImage):
+        first = intImage.get_area_sum(
+            self.tl, (self.tl[0] +
+                      self.w, self.tl[1] + self.h / 2))
+
+        second = intImage.get_area_sum(
+            (self.tl[0], self.tl[1] +
+             self.h / 2), self.br)
+
+        score = first - second
+        return score
+
+
+class FeatureTwoHorizontal(Feature):
+    dimen = (2, 1)
+
+    def get_score(self, intImage):
+        first = intImage.get_area_sum(self.tl, (self.tl[0] + self.w / 2, self.tl[1] + self.h))
+        second = intImage.get_area_sum((self.tl[0] + self.w / 2, self.tl[1]), self.br)
+        score = first - second
+        return score
+
+
+class FeatureThreeHorizontal(Feature):
+    dimen = (3, 1)
+
+    def get_score(self, intImage):
+        first = intImage.get_area_sum(self.tl, (self.tl[0] + self.w / 3, self.tl[1] + self.h))
+        second = intImage.get_area_sum((self.tl[0] + self.w / 3, self.tl[1]), (self.tl[0] + 2 * self.w / 3, self.tl[1] + self.h))
+        third = intImage.get_area_sum((self.tl[0] + 2 * self.w / 3, self.tl[1]), self.br)
+        score = first - second + third
+        return score
+
+
+class FeatureTheeVertical(Feature):
+    dimen = (1, 3)
+
+    def get_score(self, intImage):
+        first = intImage.get_area_sum(self.tl, (self.br[0], self.tl[1] + self.h / 3))
+        second = intImage.get_area_sum((self.tl[0], self.tl[1] + self.h / 3), (self.br[0], self.tl[1] + 2 * self.h / 3))
+        third = intImage.get_area_sum((self.tl[0], self.tl[1] + 2 * self.h / 3), self.br)
+        score = first - second + third
+        return score
+
+
+class FeatureFour(Feature):
+    dimen = (2, 2)
+
+    def get_score(self, intImage):
+        first = intImage.get_area_sum(self.tl, (self.tl[0] + self.w / 2, self.tl[1] + self.h / 2))
+        # top right area
+        second = intImage.get_area_sum((self.tl[0] + self.w / 2, self.tl[1]), (self.br[0], self.tl[1] + self.h / 2))
+        # bottom left area
+        third = intImage.get_area_sum((self.tl[0], self.tl[1] + self.h / 2), (self.tl[0] + self.w / 2, self.br[1]))
+        # bottom right area
+        fourth = intImage.get_area_sum((self.tl[0] + self.w / 2, self.tl[1] + self.h / 2), self.br)
+        score = first - second - third + fourth
+        return score
 
 
 class FEATURE_TYPES:
-    TWO_VERTICAL = TwoRectangleVertical
+    TYPE_TWO_VERTICAL = FeatureTwoVertical
+    TYPE_TWO_HORIZONTAL = FeatureTwoHorizontal
+    TYPE_THREE_HORIZONTAL = FeatureThreeHorizontal
+    TYPE_THREE_VERTICAL = FeatureTheeVertical
+    TYPE_FOUR_HORIZONTAL = FeatureFour
 
-
-class TwoRectangleVertical(Feature):
-    type = FEATURE_TYPES.TWO_VERTICAL
-
-    def get_score(self):
-        rect_height = self.height / 2
-        rec_width = self.width
-
-        top_left = self.position
-        top = get_area_sum(self.integral_image, top_left,
-                           rect_height, rec_width)
-
-        top_left = (self.position[0] + rect_height, self.position[1])
-        bottom = get_area_sum(self.integral_image, top_left,
-                                rect_height, rec_width)
-
-        return bottom - top
-
-
-def get_integral_image(image):
-    """
-    calculates the summed area table for the image
-    in a single pass
-    :param image: image
-    :return: summed area table (integral image)
-    """
-    result = np.zeros(image.shape)
-    for i in range(image.shape[0]):
-        for j in range(image.shape[1]):
-            result[i][j] = image[i][j]
-            if i - 1 >= 0:
-                result[i][j] += result[i-1][j]
-            if j - 1 >= 0:
-                result[i][j] += result[i][j-1]
-            if i - 1 >= 0 and j - 1 >= 0:
-                result[i][j] -= result[i-1][j-1]
-    return result
-
-
-def get_area_sum(integral_image, top_left, height, width):
-    top_right = (top_left[0], top_left[1] + width)
-    bottom_right = (top_right[0] + height, top_right[1])
-    bottom_left = (top_left[0] + height, top_left[1])
-
-    return (integral_image[top_left] + integral_image[bottom_right] -
-            integral_image[top_right] - integral_image[bottom_left])
-
-
-
-def get_feature(feature_type, x, y, width, height):
-    """
-
-    :param feature_type:
-    :param x:
-    :param y:
-    :param width:
-    :param height:
-    :return:
-    """
+    ALL = [TYPE_TWO_VERTICAL, TYPE_TWO_HORIZONTAL, TYPE_THREE_HORIZONTAL,
+           TYPE_THREE_VERTICAL, TYPE_FOUR_HORIZONTAL]
